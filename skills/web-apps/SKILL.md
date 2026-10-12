@@ -17,9 +17,13 @@ put it online with `ample_deploy`, and give them the URL.
   sign-up form, an RSVP list, a shared tracker, a webhook. Keep it to one file
   plus `package.json` or `requirements.txt`, and let the same server serve the
   page and the API.
-- Several services (say `web/` and `api/` inside the app folder, each with its
-  own `package.json`) only when one server really cannot do it. Ample plans the
-  folder, deploys each service and gives each public one its own URL.
+- Several services (say `web/` and `api/` inside the app folder) only when one
+  server really cannot do it. Ample plans the folder, deploys each service and
+  gives each public one its own URL. A plain `web/` with only HTML, CSS and JS
+  is deployed as a static site. Its pages and the API are on different hosts,
+  so the page cannot call `/api/...`: after the first deploy, put the API's URL
+  in the page's requests, allow that origin (CORS) in the API, and deploy
+  again.
 - Ask one question only if the answer changes the shape ("Should people be able
   to sign up, or just see the details?"). Otherwise pick and say so.
 
