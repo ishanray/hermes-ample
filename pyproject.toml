@@ -1,0 +1,16 @@
+[project]
+name = "hermes-ample"
+version = "0.1.0"
+description = "Ample plugin for Hermes Agent: deploy the web apps Hermes builds"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ample" }]
+dependencies = []
+
+[project.urls]
+Homepage = "https://ample.computer"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

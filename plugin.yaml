@@ -1,0 +1,52 @@
+name: ample
+label: Ample
+version: 0.1.0
+description: Put the websites and web apps Hermes builds online at public HTTPS URLs with Ample, then update, inspect and take them down.
+author: Ample
+license: MIT
+homepage: https://ample.computer
+manifest_version: 2
+requires_hermes: ">=0.21.5"
+tags: [deploy, hosting, web]
+provides_tools:
+  - ample_deploy
+  - ample_logs
+  - ample_apps
+  - ample_app_delete
+provides_hooks:
+  - pre_tool_call
+optional_env:
+  - name: AMPLE_CLIENT_ID
+    description: "Agent credential client ID. Leave empty to let the plugin sign up for a free account on the first deploy."
+    secret: false
+  - name: AMPLE_CLIENT_SECRET
+    description: "Agent credential secret, paired with AMPLE_CLIENT_ID."
+    secret: true
+  - name: AMPLE_TOKEN
+    description: "An Ample access token, instead of a client ID and secret."
+    secret: true
+config_schema:
+  signup:
+    type: bool
+    default: true
+    label: Sign up automatically
+    description: "With no credential set, sign up for a free Ample account on the first deploy and save its credential in Hermes's .env."
+  owner_email:
+    type: str
+    default: ""
+    label: Your email
+    description: "Ample emails you a link to claim an account the plugin signs up for. Unclaimed accounts are deleted after two days."
+  confirm_new_sites:
+    type: bool
+    default: true
+    label: Ask before publishing a new folder
+    description: "Ask before a folder is deployed for the first time. Deletes always ask."
+  api_url:
+    type: str
+    default: "https://api.ample.computer"
+    label: API URL
+  cli_path:
+    type: str
+    default: ""
+    label: Ample CLI path
+    description: "Use this ample binary instead of the pinned release the plugin downloads."
