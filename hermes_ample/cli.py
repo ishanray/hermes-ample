@@ -21,15 +21,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
-CLI_VERSION = "0.1.31"
+CLI_VERSION = "0.1.32"
 RELEASE_URL = "https://get.ample.computer/releases"
-# From https://get.ample.computer/releases/0.1.31/release.json.
+# From https://get.ample.computer/releases/0.1.32/release.json.
 CHECKSUMS = {
-    "ample-darwin-arm64": "d23831e416d0cbd029b7c1dac2365553778ed330d3ce019f260b0a99e022dd8a",
-    "ample-darwin-amd64": "554f9c3b9531d50a80b7f436d1811319c30b7084ddaa6309ba595b4c152150ab",
-    "ample-linux-amd64": "ee8004fd577adf09e995a53d29670b731221670418d49b7a389a77d32caf735c",
-    "ample-linux-arm64": "98626b92b9bf3724efe593df9de6daf7a6ca2c72d374e5478e18911f6774b033",
-    "ample-windows-amd64.exe": "08dece54d1d93067ab002269b41bf3fa2d7acc3213e576510557e88c9c765d1a",
+    "ample-darwin-arm64": "b21a758b14117fd18901406920afe4af1552aca96e720bc54646beb269d5460a",
+    "ample-darwin-amd64": "65aebcabb8054b7e81a7be58a2881eaea54a1425dc0a2e78d710a5cd8af85a33",
+    "ample-linux-amd64": "d54e91f389dc899cfbf05752c17f462da193a87b51b80118f8d82ee0ad5a0f90",
+    "ample-linux-arm64": "559fbeaaf0e76a2e9c312641d6ba8271359d4c707ead6f884a02207e260bb180",
+    "ample-windows-amd64.exe": "b262849e829d517bc03e04f4896668ba946754cd2cb41684d809dfc896f98eff",
 }
 MAX_DOWNLOAD_BYTES = 256 * 1024 * 1024
 

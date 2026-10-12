@@ -56,8 +56,8 @@ Please read this before installing.
 - **Network calls.** It talks to Ample's API at `api.ample.computer`:
   - signup, sign-in and claim emails;
   - every deploy, log, list and delete.
-- **One download.** On first use it downloads the Ample CLI, version 0.1.31,
-  from Ample's release server, `get.ample.computer/releases/0.1.31/`. The file is
+- **One download.** On first use it downloads the Ample CLI, version 0.1.32,
+  from Ample's release server, `get.ample.computer/releases/0.1.32/`. The file is
   checked against the SHA-256 pinned in `hermes_ample/cli.py`, saved under
   `<hermes home>/plugin-data/ample/`, and never updated by the plugin; a new
   CLI comes only with a new plugin release. Set `cli_path` to use your own
