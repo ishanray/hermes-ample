@@ -58,15 +58,40 @@ class Folders:
     protected: Callable[[], list[Path]] = lambda: []
 
 
+class Published:
+    """Folders the user has published, kept in plugin state (one list per Hermes profile).
+
+    The publish approval is skipped only for these. Nothing in the folder itself
+    counts: the agent can create any file there, so a folder's own `.ample/` must
+    not stand in for the user's yes.
+    """
+
+    KEY = "published_folders"
+    LIMIT = 500
+
+    def __init__(self, state: Any) -> None:
+        self._state = state
+
+    def contains(self, folder: Path) -> bool:
+        return str(folder) in (self._state.get(self.KEY) or [])
+
+    def add(self, folder: Path) -> None:
+        folders = [path for path in (self._state.get(self.KEY) or []) if path != str(folder)]
+        folders.append(str(folder))
+        self._state.set(self.KEY, folders[-self.LIMIT:])
+
+
 class Tools:
     def __init__(self, account: Account, binary: cli.Binary, *, folders: Folders,
                  config_path: Callable[[], Path], base_env: Callable[[], dict],
+                 published: Optional[Published] = None,
                  run: Callable[..., cli.CliResult] = cli.run) -> None:
         self.account = account
         self.binary = binary
         self.folders = folders
         self.config_path = config_path
         self.base_env = base_env
+        self.published = published
         self._run = run
 
     # -- running the CLI ---------------------------------------------------
@@ -171,6 +196,10 @@ class Tools:
                     cli_args += ["--env-file", str(env_dir / "deploy.env")]
                 if args.get("force") is True:
                     cli_args.append("--force")
+                # This tool runs only once Hermes's approval gate let it through, so the
+                # folder is now one the user chose to publish; later deploys of it do not ask.
+                if self.published is not None:
+                    self.published.add(folder)
                 run = ample(cli_args, DEPLOY_TIMEOUT, "deploy")
                 if isinstance(run, str):
                     return run

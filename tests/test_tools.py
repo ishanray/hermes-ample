@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from hermes_ample import cli
-from hermes_ample.tools import Folders, Tools, resolve_folder
+from hermes_ample.tools import Folders, Published, Tools, resolve_folder
 from tests.helpers import FakeApi, FakeCli, MemoryState, Secrets, make_account, ok
 
 SINGLE = {"services": [{"name": "web", "path": "."}]}
@@ -345,3 +345,27 @@ def test_bad_log_arguments_are_refused(tmp_path, args, reason):
     tools, fake, _, _, _ = setup(tmp_path, by_command())
     assert reason in json.loads(tools.logs(args))["error"]
     assert fake.calls == []
+
+
+def test_a_deploy_records_the_folder_and_a_refused_one_does_not(tmp_path):
+    tools, _, work, _, _ = setup(tmp_path, by_command())
+    state = MemoryState()
+    tools.published = Published(state)
+    folder = app(work)
+    assert json.loads(tools.deploy({"path": "bake-sale"}))["ok"] is True
+    assert Published(state).contains(folder.resolve())
+
+    assert json.loads(tools.deploy({"path": ".."}))["ok"] is False
+    assert json.loads(tools.deploy({"path": "bake-sale", "env": {"1X": "v"}}))["ok"] is False
+    assert state.data["published_folders"] == [str(folder.resolve())]
+
+
+def test_published_folders_are_kept_once_and_bounded():
+    state = MemoryState()
+    published = Published(state)
+    for index in range(Published.LIMIT + 10):
+        published.add(Path(f"/srv/site-{index}"))
+    published.add(Path("/srv/site-20"))
+    folders = state.data["published_folders"]
+    assert len(folders) == Published.LIMIT and folders.count("/srv/site-20") == 1
+    assert folders[-1] == "/srv/site-20" and not published.contains(Path("/srv/site-0"))

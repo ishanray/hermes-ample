@@ -11,7 +11,7 @@ from typing import Any, Optional
 
 from . import cli, schemas
 from .account import DEFAULT_API_URL, Account, Settings
-from .tools import Folders, Tools, resolve_folder
+from .tools import Folders, Published, Tools, resolve_folder
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +92,7 @@ class Plugin:
                     folders=Folders(cwd=_cwd, protected=_protected),
                     config_path=lambda: _data_dir() / "cli" / "config.json",
                     base_env=lambda: dict(os.environ),
+                    published=Published(self.ctx.state),
                 )
                 self._by_home[home] = tools
             return tools
@@ -101,15 +102,19 @@ class Plugin:
         try:
             args = args or {}
             if tool_name == "ample_app_delete":
+                deployment_id = str(args.get("deployment_id", ""))
+                # Scoped to the one app, so an "always" answer never covers other deletes.
                 return {
                     "action": "approve",
-                    "message": f"Delete the Ample app {args.get('deployment_id', '')}? Its URL stops working.",
-                    "rule_key": "ample:delete",
+                    "message": f"Delete the Ample app {deployment_id}? Its URL stops working.",
+                    "rule_key": f"ample:delete:{deployment_id}",
                 }
             if tool_name == "ample_deploy" and self.setting("confirm_new_sites", True):
                 folder = resolve_folder(str(args.get("path") or ""), Folders(cwd=_cwd, protected=_protected))
-                # A refused path is reported by the tool itself; a folder deployed before is not new.
-                if isinstance(folder, Path) and not (folder / ".ample").exists():
+                # A refused path is reported by the tool itself. Only a folder the user
+                # published before (recorded in plugin state) skips the question; files in
+                # the folder, such as an .ample/ the agent created, never do.
+                if isinstance(folder, Path) and not Published(self.ctx.state).contains(folder):
                     return {
                         "action": "approve",
                         "message": f"Publish {folder} on the public internet with Ample? Everything in the folder is uploaded.",

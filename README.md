@@ -82,7 +82,7 @@ Please read this before installing.
     `.ample/` folder of deploy records. If an earlier account was deleted,
     `.ample/` may be removed and written again.
   - In `<hermes home>/plugin-data/ample/`: the CLI and its state, plus the
-    account ID and claim link.
+    account ID, the claim link and the list of folders you have published.
 - **Stored credentials.** After a signup, the new `AMPLE_CLIENT_ID` and
   `AMPLE_CLIENT_SECRET` are saved in Hermes's `.env`, the way Hermes stores
   other keys. Nothing secret is kept in plugin state.
@@ -91,9 +91,14 @@ Please read this before installing.
 
 ## Approvals
 
-- **Deletes.** `ample_app_delete` always asks for your approval.
+- **Deletes.** `ample_app_delete` always asks for your approval. Each prompt is
+  for one app, so an "always" answer covers only that app.
 - **First publish.** `ample_deploy` asks before a folder is published for the
-  first time (turn this off with `confirm_new_sites`).
+  first time (turn this off with `confirm_new_sites`). The plugin remembers the
+  folders you have published in its own state, per Hermes profile, and only
+  those skip the question. Nothing inside a folder counts, so an `.ample/`
+  folder or `ample.toml` the agent wrote itself still gets a prompt, and a
+  symlink is judged by the folder it points to.
 - **Hermes's rules apply.** Both prompts go through Hermes's approval gate, so
   Hermes's rules for unattended runs apply. Under cron and in one-shot `-q`
   runs, a prompt nobody can answer is denied unless you configured Hermes to

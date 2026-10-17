@@ -5,7 +5,15 @@ import pytest
 
 import hermes_ample.plugin as plugin_module
 from hermes_ample.plugin import Plugin, register
-from tests.helpers import MemoryState
+from hermes_ample.tools import Folders, Published, Tools
+from tests.helpers import FakeApi, FakeCli, MemoryState, Secrets, make_account, ok
+
+LIVE = {"status": "live", "url": "https://site.example", "deployment_id": "dep_1"}
+
+
+class FixedBinary:
+    def path(self):
+        return Path("/opt/ample")
 
 
 class FakeContext:
@@ -59,20 +67,61 @@ def test_the_manifest_declares_what_register_registers():
     assert "  - pre_tool_call\n" in manifest
 
 
-def test_deleting_an_app_always_asks(home):
+def test_deleting_an_app_always_asks_for_that_app_only(home):
     plugin = Plugin(FakeContext())
     directive = plugin.approval("ample_app_delete", {"deployment_id": "dep_1"}, "task")
     assert directive["action"] == "approve" and "dep_1" in directive["message"]
+    # An "always" answer is scoped to the one app, never to every future delete.
+    assert directive["rule_key"] == "ample:delete:dep_1"
+    assert plugin.approval("ample_app_delete", {"deployment_id": "dep_2"}, "task")["rule_key"] == "ample:delete:dep_2"
 
 
-def test_publishing_a_new_folder_asks_and_a_redeploy_does_not(home):
+def test_a_folder_the_agent_marked_as_deployed_still_asks(home):
+    # The agent can create .ample/ (or ample.toml) itself with a file or terminal call;
+    # that must not stand in for the user's yes.
+    folder = home / "Documents"
+    (folder / ".ample").mkdir(parents=True)
+    (folder / ".ample" / "account.json").write_text('{"account_id": "acc_x"}')
+    (folder / "ample.toml").write_text("version = 1\n")
+    directive = Plugin(FakeContext()).approval("ample_deploy", {"path": "Documents"}, "task")
+    assert directive["action"] == "approve"
+    assert str(folder.resolve()) in directive["message"]
+
+
+def test_a_folder_published_through_the_tool_is_not_asked_about_again(home):
     folder = home / "site"
     folder.mkdir()
-    plugin = Plugin(FakeContext())
-    directive = plugin.approval("ample_deploy", {"path": "site"}, "task")
-    assert directive["action"] == "approve" and str(folder.resolve()) in directive["message"]
-    (folder / ".ample").mkdir()
+    (folder / "index.html").write_text("<h1>hi</h1>")
+    ctx = FakeContext()
+    plugin = Plugin(ctx)
+    assert plugin.approval("ample_deploy", {"path": "site"}, "task")["action"] == "approve"
+
+    # The user approved, so the tool ran and deployed it.
+    fake = FakeCli(lambda args: ok(LIVE if args[2] == "deploy" else {"services": [{"path": "."}]}))
+    api = FakeApi()
+    tools = Tools(make_account(api, Secrets(), ctx.state), FixedBinary(),
+                  folders=Folders(cwd=lambda: str(home), home=home.parent / "elsewhere"),
+                  config_path=lambda: home / "cli.json", base_env=dict,
+                  published=Published(ctx.state), run=fake)
+    assert json.loads(tools.deploy({"path": "site"}))["ok"] is True
+
     assert plugin.approval("ample_deploy", {"path": "site"}, "task") is None
+    assert plugin.approval("ample_deploy", {"path": str(folder)}, "task") is None
+    other = home / "other"
+    other.mkdir()
+    assert plugin.approval("ample_deploy", {"path": "other"}, "task")["action"] == "approve"
+
+
+def test_a_symlink_to_an_unpublished_folder_still_asks(home):
+    real = home / "private"
+    real.mkdir()
+    published = home / "site"
+    published.mkdir()
+    ctx = FakeContext()
+    Published(ctx.state).add(published.resolve())
+    published.rmdir()
+    published.symlink_to(real, target_is_directory=True)
+    assert Plugin(ctx).approval("ample_deploy", {"path": "site"}, "task")["action"] == "approve"
 
 
 def test_the_first_publish_prompt_can_be_turned_off(home):
